@@ -8,17 +8,17 @@ from typing import Callable, Any, Dict
 # Do NOT rename the variable or the keys (they must match Agent names).       #
 # --------------------------------------------------------------------------- #
 PHASE_MSG: Dict[str, str] = {
-    "Monitor":     "📡 Scanning log for failure block...",
-    "Memory":      "🧠 Searching context memory...",
-    "Diagnosis":   "🩺 Diagnosing root cause...",
-    "Remediation": "🛠️  Suggesting remediation steps...",
-    "Title":       "📝 Generating incident title...",
-    "Snippet":     "🔍 Extracting traceback snippet...",
-    "Reporter":    "📄 Assembling Markdown report...",
-    "Sanitize":    "🧽 Cleaning up output...",
-    "Critic":      "👁️  Self-critiquing JSON...",
-    "Patch":       "🩹 Auto-patching small issues...",
-    "Push":        "📤 Sending to Slack...",
+    "Monitor":     "Scanning log for failure block... (this may take a moment)",
+    "Memory":      "Searching context memory... (this may take a moment)",
+    "Diagnosis":   "Diagnosing root cause... (this may take a moment)",
+    "Remediation": "Suggesting remediation steps... (this may take a moment)",
+    "Title":       "Generating incident title...",
+    "Snippet":     "Extracting traceback snippet...",
+    "Reporter":    "Assembling Markdown report...",
+    "Sanitize":    "Cleaning up output...",
+    "Critic":      "Self-critiquing JSON...",
+    "Patch":       "Auto-patching small issues...",
+    "Push":        "Sending to Slack...",
 }
 
 class Agent:
@@ -33,7 +33,7 @@ class Agent:
 
 @contextmanager
 def trace(name: str):
-    msg = PHASE_MSG.get(name, f"🤖 Running {name}…")
+    msg = PHASE_MSG.get(name, f"Running {name}…")
     print(f"→ {msg}", flush=True)
     t0 = time.time()
     yield
