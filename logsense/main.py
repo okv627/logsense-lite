@@ -1,4 +1,4 @@
-# main.py – v5.1 uses ExtractorAgent + smarter retries
+# main.py – v5.2 with improved retry logic and refined traceback processing
 import sys, uuid, time, os
 from pathlib import Path
 from dotenv import load_dotenv; load_dotenv()
@@ -17,7 +17,7 @@ def main() -> None:
     issue = MonitorAgent(raw)
     ctx   = MemoryAgent(issue)
     tb_obj = ExtractorAgent(issue)
-    tb     = tb_obj.get("primary", issue)
+    tb     = tb_obj.get("trace", issue)
 
     obj = {}
     for i in range(MAX_RETRY):
@@ -28,11 +28,11 @@ def main() -> None:
         draft  = GeneratorAgent(issue, ctx, tb, strict, temp)
         obj    = CriticAgent(draft, temp)
 
-        good = obj and all(k in obj for k in ("title","diagnosis","remediation","snippet")) \
+        good = obj and all(k in obj for k in ("title", "diagnosis", "remediation", "snippet")) \
               and 1 < len(obj["remediation"]) <= 3
         if good:
             break
-        print(f"🔁 retry {i+1}/{MAX_RETRY-1} temp={temp}")
+        print(f"retry {i+1}/{MAX_RETRY} temp={temp}")
         time.sleep(0.25)
 
     if not obj:   # final fallback

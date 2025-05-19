@@ -1,10 +1,10 @@
-# agents.py – v5.2  (robust JSON parse + full-block traceback scoring)
+# agents.py – v5.3 (with more specific exception classification + noise handling improvements)
 
 import os, re, textwrap, json, requests
 from collections import namedtuple
 from .runner import Agent
-from .llm    import call_llm
-from .       import rag
+from .llm import call_llm
+from . import rag
 
 # ─────────── helpers ────────────
 RULES = rag.query("business rules", 1) or "(no rules)"
@@ -49,35 +49,35 @@ def _score(tb: str, idx: int, total: int) -> TB:
 
 def _extract(log: str) -> dict:
     blocks = _split_tbs(log)
-    if not blocks:
-        return {"primary": log, "kind": "Unknown"}
-
     scored = [_score(b, i, len(blocks)) for i, b in enumerate(blocks)]
     primary = max(scored, key=lambda t: t.score)
     kind = (_SIG.search(primary.text) or re.search(r":\s*([A-Za-z]+Error)", primary.text) or ["Error"])[0]
 
-    # Return trace and kind, and also handle edge case where no valid trace is found
-    return {"primary": primary.text.strip() if primary.text else "No primary traceback found", "kind": kind}
+    # Classify secondary causes
+    secondary = [tb for tb in scored if tb != primary]
+    secondary_kinds = [(_SIG.search(tb.text) or re.search(r":\s*([A-Za-z]+Error)", tb.text) or ["Error"])[0] for tb in secondary]
+
+    return {"trace": primary.text.strip(), "kind": kind, "secondary": secondary_kinds}
 
 ExtractorAgent = Agent("Extractor", _extract)
-
 
 # ─────────── 3 Memory ────────────
 MemoryAgent = Agent("Memory", lambda q: rag.query(q, 2))
 
 # ─────────── 4 Generator ─────────
 def _gen(issue, ctx, tb, strict, temp):
-    prompt = json.dumps([
-        {"role":"system",
-         "content":(
-           "You are an incident summariser. "
-           "Return *only* valid JSON matching "
-           '{"title":str,"diagnosis":str,"remediation":[str],"snippet":str}. '
-           f"{'STRICT FORMAT.' if strict else ''}")},
+    prompt = json.dumps([{
+        "role":"system",
+        "content":(
+            "You are an incident summariser. "
+            "Return *only* valid JSON matching "
+            '{"title":str,"diagnosis":str,"remediation":[str],"snippet":str}. '
+            f"{'STRICT FORMAT.' if strict else ''}")},
         {"role":"user",
          "content":f"Primary Traceback:\n{tb}\n\nLogs:\n{issue}\n\nSimilar:\n{ctx}\n\nRules:\n{RULES}"}])
     raw = call_llm(prompt, temp=temp)
     return _safe_json(raw)
+
 GeneratorAgent = Agent("Generator", _gen)
 
 # ─────────── 5 Critic ────────────
@@ -90,6 +90,7 @@ def _critic(obj, temp):
         f"{json.dumps(obj)}")
     ans = call_llm(ask, temp=temp, max_tokens=120)
     return obj if ans.strip().lower().startswith("pass") else _safe_json(ans)
+
 CriticAgent = Agent("Critic", _critic)
 
 # ─────────── 6 Markdown wrap ─────
@@ -118,5 +119,5 @@ PatchAgent = Agent("Patch", lambda md: (
 # ─────────── 8 Push ──────────────
 _WEB = os.getenv("SLACK_WEBHOOK", "")
 PushAgent = Agent("Push", lambda md: requests.post(
-        _WEB, json={"text": md.splitlines()[0]}, timeout=5).status_code
-        if _WEB.startswith("http") else "noop")
+    _WEB, json={"text": md.splitlines()[0]}, timeout=5).status_code
+if _WEB.startswith("http") else "noop")
