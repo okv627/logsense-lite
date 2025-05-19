@@ -1,0 +1,7 @@
+[2025-05-12 02:14:07,423] {taskinstance.py:1150} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/airflow/operators/python.py", line 175, in execute
+    return_value = self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/fetch_data.py", line 42, in fetch_api_data
+    raise ValueError("API token missing or invalid")
+ValueError: API token missing or invalid

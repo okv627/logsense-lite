@@ -1,0 +1,17 @@
+# ▸ local models (GGUF, checkpoints, etc.)
+models/
+*.gguf
+
+# ▸ run-time artefacts
+rag_db/
+incident_report.md
+logsense_metrics.csv
+
+# ▸ venv / editors
+.venv/
+.idea/
+.vscode/
+
+# ▸ OS cruft
+.DS_Store
+Thumbs.db

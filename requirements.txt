@@ -1,0 +1,5 @@
+llama-cpp-python==0.3.9
+sentence-transformers==2.5.1
+chromadb==0.4.24
+python-dotenv==1.0.1
+requests==2.31.0

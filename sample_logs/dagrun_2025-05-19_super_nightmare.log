@@ -1,0 +1,49 @@
+[2025-05-19 13:03:22,510] {logging_mixin.py:109} INFO - Starting attempt 1 of 5
+[2025-05-19 13:03:22,515] {taskinstance.py:914} INFO - Using executor LocalExecutor
+[2025-05-19 13:03:22,540] {hook.py:256} WARNING - Retry #1: API returned 504 Gateway Timeout
+[2025-05-19 13:03:22,999] {taskinstance.py:1034} ERROR - Unexpected error:
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 966, in _run_raw_task
+    result = task_copy.execute(context=context)
+  File "/usr/local/lib/python3.11/site-packages/airflow/operators/python.py", line 150, in execute
+    return_value = self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/complex_sync.py", line 132, in orchestrate_sync
+    batch = next(data_iterator)
+  File "/opt/airflow/dags/complex_sync.py", line 89, in chunk_generator
+    raise ValueError(f"Chunking failed: expected list, got {type(records)}")
+ValueError: Chunking failed: expected list, got <class 'NoneType'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/airflow/utils/session.py", line 73, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 1354, in handle_failure
+    self.set_state(State.FAILED, session=session)
+  File "/usr/local/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 1420, in set_state
+    self.log.info("Setting state to %s", state)
+AttributeError: 'NoneType' object has no attribute 'log'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1840, in _execute_context
+    context = constructor(dialect, self, conn, *args)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column "chunk_id" does not exist
+
+[SQL: INSERT INTO logs (chunk_id, error_level, message) VALUES (%s, %s, %s)]
+[parameters: ('42', 'ERROR', 'Chunking failed unexpectedly')]
+
+The above exception was caused by:
+  File "/opt/airflow/dags/complex_sync.py", line 139, in orchestrate_sync
+    log_error_to_db(error="Chunking failure", chunk=batch)
+  File "/opt/airflow/dags/log_utils.py", line 25, in log_error_to_db
+    db.session.commit()
+sqlalchemy.exc.IntegrityError: (psycopg2.errors.ForeignKeyViolation) insert or update on table "logs" violates foreign key constraint "logs_user_id_fkey"
+
+DETAIL:  Key (user_id)=(null) is not present in table "users".
+
+[2025-05-19 13:03:23,100] {logging_mixin.py:109} WARNING - DAG silently failed with overlapping nested exceptions.
+[2025-05-19 13:03:23,103] {logging_mixin.py:109} INFO - Upstream task completed with skipped state: task_id=load_metrics
+[2025-05-19 13:03:23,105] {taskinstance.py:1456} INFO - Marking task as FAILED. dag_id=multi_layered_failure, task_id=orchestrate_sync, execution_date=2025-05-19T13:03:00+00:00
+[2025-05-19 13:03:23,115] {taskinstance.py:1502} ERROR - Task failed without raising a recognizable exception!

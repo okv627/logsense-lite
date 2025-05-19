@@ -1,0 +1,29 @@
+[2025-05-13 03:58:12,100] {start.py:75} INFO  - DAG run: data_pipeline_v2
+[2025-05-13 03:58:15,027] {bash_operator.py:123} INFO  - + echo 'Running prechecks'
+[2025-05-13 03:58:17,442] {python.py:185}       INFO  - preflight_checks succeeded
+
+# ---- NOISE: intermittent warning spam ------------------------------------
+[2025-05-13 03:58:22,514] {http_hook.py:99}     WARNING - API throttle: 429 Too Many Requests
+[2025-05-13 03:58:23,100] {retry.py:44}        INFO    - Backing off 1s, retrying...
+# --------------------------------------------------------------------------
+
+[2025-05-13 03:58:24,901] {taskinstance.py:1150} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/airflow/operators/python.py", line 175, in execute
+    return_value = self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/db_sync.py", line 88, in sync_to_dw
+    raise ConnectionError("DW connection refused")
+ConnectionError: DW connection refused
+
+[2025-05-13 03:58:25,105] {taskinstance.py:1194} INFO - Marking task as FAILED. dag_id=data_pipeline_v2, task_id=sync_to_dw
+
+[2025-05-13 03:58:25,423] {taskinstance.py:1150} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/airflow/operators/python.py", line 175, in execute
+    return_value = self.python_callable(*self.op_args, **self.op_kwargs)
+  File "/opt/airflow/dags/validate_schema.py", line 53, in validate_schema
+    raise ValueError("Schema drift: column 'price' missing in target table")
+ValueError: Schema drift: column 'price' missing in target table
+
+[2025-05-13 03:58:25,428] {taskinstance.py:1194} INFO - Marking task as FAILED. dag_id=data_pipeline_v2, task_id=validate_schema
+[2025-05-13 03:58:25,431] {dagrun.py:604}      INFO - DagRun finished. State=failed
